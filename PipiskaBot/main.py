@@ -18,14 +18,14 @@ cursor = conn.cursor()
 
 # Начальные данные пользователей (включая зарегистрированных)
 users = [
-    ('Davlet', 310, '1970-01-01 00:00:00'),
-    ('Skagi', 305, '1970-01-01 00:00:00'),
-    ('makbauer', 235, '1970-01-01 00:00:00'),
-    ('Sosihue', 234, '1970-01-01 00:00:00'),
-    ('AmiR', 218, '1970-01-01 00:00:00'),
-    ('kkosttt', 175, '1970-01-01 00:00:00'),
-    ('_tsakhaev_🍀', 168, '1970-01-01 00:00:00'),
-    ('Banan', 122, '1970-01-01 00:00:00')
+    (1324983679, 'Davlet', 310, '1970-01-01 00:00:00'),
+    (1009642373, 'Skagi', 305, '1970-01-01 00:00:00'),
+    (1120515812, 'makbauer', 235, '1970-01-01 00:00:00'),
+    (1176559306, 'Sosihue', 234, '1970-01-01 00:00:00'),
+    (1407080401, 'AmiR', 218, '1970-01-01 00:00:00'),
+    (986664021, 'kkosttt', 175, '1970-01-01 00:00:00'),
+    (758067744, '_tsakhaev_🍀', 168, '1970-01-01 00:00:00'),
+    (5359944761, 'Banan', 122, '1970-01-01 00:00:00')
 ]
 
 # Удаление таблицы users, если она уже существует
@@ -44,8 +44,8 @@ cursor.execute('''
 # Вставка или обновление данных для каждого пользователя
 for user in users:
     cursor.execute("""
-        INSERT INTO users (username, length, last_used)
-        VALUES (?, ?, ?)
+        INSERT INTO users (user_id, username, length, last_used)
+        VALUES (?, ?, ?, ?)
         ON CONFLICT(username) DO UPDATE SET length=excluded.length, last_used=excluded.last_used
     """, user)
 conn.commit()
@@ -78,15 +78,16 @@ def dick_command(message):
 
     # Проверка на существование пользователя по username
     user_cursor = conn.cursor()
-    user_cursor.execute("SELECT user_id FROM users WHERE username = ?", (username,))
+    user_cursor.execute("SELECT username FROM users WHERE user_id = ?", (user_id,))
     user = user_cursor.fetchone()
 
     # Если пользователь уже существует, обновляем его user_id и last_used
-    if user:
-        user_cursor.execute("UPDATE users SET user_id = ?, last_used = ? WHERE username = ?",
-                            (user_id, '1970-01-01 00:00:00', username))
+    if user and (user[0] != username):
+        user_cursor.execute("UPDATE users SET username = ? WHERE user_id = ?",
+                            (username, user_id))
         conn.commit()
-    else:
+
+    elif not user:
         # Регистрация нового пользователя
         user_cursor.execute("INSERT INTO users (user_id, username, length, last_used) VALUES (?, ?, 0, ?)",
                             (user_id, username, '1970-01-01 00:00:00'))
@@ -104,7 +105,7 @@ def dick_command(message):
     last_used = datetime.strptime(user[1], '%Y-%m-%d %H:%M:%S')
     user_cursor.close()
 
-    if datetime.now() - last_used >= timedelta(seconds=3):  # Установлено на 3 секунды для тестирования
+    if datetime.now() - last_used >= timedelta(hours=24):  # Установлено на 3 секунды для тестирования
         if user_id == 1407080401 or user_id == 1324983679 or user_id == 1120515812:
             delta = random.choice(list(range(5, 11)))
         else:
