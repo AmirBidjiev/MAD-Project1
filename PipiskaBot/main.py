@@ -7,10 +7,10 @@ import matplotlib.pyplot as plt
 import io
 import os
 
-# Инициализация бота с токеном
 TOKEN = os.getenv('7896430421:AAExd1DmhC6dcK0ms5W6q9AmDKF90C4knLQ')
 bot = telebot.TeleBot('7896430421:AAExd1DmhC6dcK0ms5W6q9AmDKF90C4knLQ',
                       parse_mode='HTML')  # Установлен HTML-режим для обращения по имени
+
 
 # Подключение и создание базы данных SQLite
 conn = sqlite3.connect('dick_game.db', check_same_thread=False)
@@ -18,35 +18,32 @@ cursor = conn.cursor()
 
 # Начальные данные пользователей (включая зарегистрированных)
 users = [
-    (1324983679, 'Davlet', 319, '1970-01-01 00:00:00'),
-    (1009642373, 'Skagi', 317, '1970-01-01 00:00:00'),
-    (1120515812, 'makbauer', 243, '1970-01-01 00:00:00'),
-    (1176559306, 'Sosihue', 251, '1970-01-01 00:00:00'),
-    (1407080401, 'AmiR', 215, '1970-01-01 00:00:00'),
-    (986664021, 'kkosttt', 182, '1970-01-01 00:00:00'),
-    (758067744, '_tsakhaev_🍀', 164, '1970-01-01 00:00:00'),
-    (5359944761, 'Banan', 122, '1970-01-01 00:00:00')
+    (1324983679, 'Davlet', 561, '1970-01-01 00:00:00'),
+    (1009642373, 'Skagi', 606, '1970-01-01 00:00:00'),
+    (1120515812, 'makbauer', 500, '1970-01-01 00:00:00'),
+    (1176559306, 'Sosihue', 551, '1970-01-01 00:00:00'),
+    (1407080401, 'AmiR', 377, '1970-01-01 00:00:00'),
+    (986664021, 'kkosttt', 245, '1970-01-01 00:00:00'),
+    (758067744, '_tsakhaev_🍀', 442, '1970-01-01 00:00:00'),
+    (5359944761, 'Banan', 269, '1970-01-01 00:00:00')
 ]
 
-# Удаление таблицы users, если она уже существует
-cursor.execute("DROP TABLE IF EXISTS users")
-
-# Создание таблицы с уникальным ограничением на username
+# Создание таблицы, если она еще не существует
 cursor.execute('''
-    CREATE TABLE users (
-        user_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT UNIQUE,  -- Уникальное ограничение для username
+    CREATE TABLE IF NOT EXISTS users (
+        user_id INTEGER PRIMARY KEY,
+        username TEXT UNIQUE,  
         length INTEGER DEFAULT 0,
         last_used TEXT DEFAULT '1970-01-01 00:00:00'
     )
 ''')
 
-# Вставка или обновление данных для каждого пользователя
+# Добавляем только новых пользователей, не затирая старые данные
 for user in users:
     cursor.execute("""
         INSERT INTO users (user_id, username, length, last_used)
         VALUES (?, ?, ?, ?)
-        ON CONFLICT(username) DO UPDATE SET length=excluded.length, last_used=excluded.last_used
+        ON CONFLICT(user_id) DO NOTHING  -- Если пользователь уже есть, не вставлять
     """, user)
 conn.commit()
 
@@ -109,7 +106,7 @@ def dick_command(message):
 
         if datetime.now() - last_used >= timedelta(hours=24):  # Установлено на 3 секунды для тестирования
             if user_id == 1407080401 or user_id == 1324983679 or user_id == 1120515812:
-                delta = random.choice(list(range(5, 11)))
+                delta = random.choice(list(range(7, 11)))
             else:
                 delta = random.choice(list(range(-5, 0)) + list(range(1, 7)))
             new_length = user[0] + delta
